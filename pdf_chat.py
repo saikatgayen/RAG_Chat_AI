@@ -1,38 +1,62 @@
-from ollama import chat
-from rag_utils import extract_pdf_text, chunk_text, retrieve_chunks, build_prompt
+from pypdf import PdfReader # type: ignore
+from ollama import chat # type: ignore
 
 
-PDF_PATH = "ML3.pdf"
+#------------ Extract Text from PDF ------------
 
-def main():
-    print("LOADING PDF...")
-    text = extract_pdf_text(PDF_PATH)
+def Extract_Text(pdf_path):
+    reader = PdfReader(pdf_path)
+    text = ""
 
-    print("CHUNKING TEXT...")
-    chunks = chunk_text(text)
+    for page in reader.pages:
+        extracted = page.extract_text()
+        if extracted:
+            text += extracted + "\n"
 
-    print("PDF ready. Ask questions (type 'exit' to quit)\n")
-
-    while True:
-        question = input("QUESTION:")
-        if question.lower() == "exit":
-            break
-
-
-        relevant_chunks = retrieve_chunks(question, chunks)
-        prompt = build_prompt(relevant_chunks, question)
-
-      
-        response = chat(
-            model = "llama3",
-            messages = [{"role":"user", "container": prompt}]
-        )
+        return text
+    
+#------------ Ask LLM with content ------------
 
 
-        print("\n ANSWER:")
-        print(response["message"]["content"])
-        print("-" * 50)
+def ask_pdf(pdf_text, question):
+    prompt = f"""
+    You are answering strictly from the given PDF content.
+If the answer is not in the PDF, say Not found in the document."
+
+
+
+PDF Content:
+{pdf_text}
+
+Question:
+{question}
+
+Answer:
+"""
+
+    response = chat(
+        model="llama3",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+    
+    return response["message"]["content"]
+
+#------------ Run CLI ------------
 
 
 if __name__ == "__main__":
-     main()
+    pdf_path = "ML3.pdf"  # Path to your PDF file
+    pdf_text = Extract_Text(pdf_path)
+
+    print("PDF loaded. Ask questions (type 'exit' to quit)\n")
+
+    while True:
+        question = input(">> ")
+
+        if question.lower() == 'exit':
+            break
+
+        answer = ask_pdf(pdf_text, question)
+        print(f"Answer: {answer}\n")
