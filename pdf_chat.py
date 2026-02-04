@@ -1,3 +1,4 @@
+
 from pypdf import PdfReader # type: ignore
 from ollama import chat # type: ignore
 
@@ -55,8 +56,9 @@ if __name__ == "__main__":
     while True:
         question = input(">> ")
 
+
         if question.lower() == 'exit':
             break
 
         answer = ask_pdf(pdf_text, question)
-        print(f"Answer: {answer}\n")
+        print("\n", answer, "\n")
