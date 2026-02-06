@@ -1,7 +1,6 @@
-
 from pypdf import PdfReader # type: ignore
 from ollama import chat # type: ignore
-
+import os
 
 #------------ Extract Text from PDF ------------
 
@@ -25,7 +24,6 @@ def ask_pdf(pdf_text, question):
 If the answer is not in the PDF, say Not found in the document."
 
 
-
 PDF Content:
 {pdf_text}
 
@@ -46,10 +44,22 @@ Answer:
 
 
 if __name__ == "__main__":
-    pdf_path = "ML3.pdf"  # Path to your PDF file
+    pdf_path = input("Enter the path to your PDF file: ").strip()
+
+
+    if not os.path.exists(pdf_path):
+        print("File not found. Please check the path and try again.")
+        exit(1)
+
+    if not pdf_path.lower().endswith('.pdf'):
+        print("The specified file is not a PDF. Please provide a valid PDF file.")
+        exit(1)
+
+    print("\nLoading PDF...")
     pdf_text = Extract_Text(pdf_path)
 
-    print("PDF loaded. Ask questions (type 'exit' to quit)\n")
+    print("PDF loaded successfully. You can now ask questions about its content.")
+    print("Ask your questions below (type 'exit' to quit):\n")
 
     while True:
         question = input(">> ")
