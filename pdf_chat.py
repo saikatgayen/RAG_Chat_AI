@@ -20,8 +20,8 @@ def Extract_Text(pdf_path):
 
 def ask_pdf(pdf_text, question):
     prompt = f"""
-    You are answering strictly from the given PDF content.
-If the answer is not in the PDF, say Not found in the document."
+    Answer strictly using the PDF content.
+ If the answer cannot be confidently inferred, say "Not found in the document."
 
 
 PDF Content:
