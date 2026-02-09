@@ -1,6 +1,7 @@
-from pypdf import PdfReader # type: ignore
-from ollama import chat # type: ignore
+from pypdf import PdfReader 
+from ollama import chat 
 import os
+import re
 
 #------------ Extract Text from PDF ------------
 
@@ -13,19 +14,65 @@ def Extract_Text(pdf_path):
         if extracted:
             text += extracted + "\n"
 
-        return text
+    return text
     
-#------------ Ask LLM with content ------------
+
+#------------ Chunk Text ------------
+
+def chunk_text(text, chunk_size=500, overlap=100):
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    chunks = []
+    current_chunk = ""
+
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) <= chunk_size:
+            current_chunk += " " + sentence
+        else:
+            chunks.append(current_chunk.strip()) #overlap handled by keeping last parts of the chunk
+            current_chunk = sentence
+
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    return chunks
+
+#------------ Retrieval of relevant chunks ------------
+
+def retrieve_chunks(chunks, question, top_k=9):
+    question_words = set(re.findall(r"\w+", question.lower()))
+    scored_chunks = []
+
+    for chunk in chunks:
+        chunk_words = set(re.findall(r"\w+", chunk.lower()))
+        score = len(question_words.intersection(chunk_words))
+        scored_chunks.append((score, chunk))
+
+    scored_chunks.sort(key= lambda x: x[0], reverse= True)
+
+    return [chunk for score, chunk in scored_chunks[:top_k]]
 
 
-def ask_pdf(pdf_text, question):
+#------------ Ask LLM with context ------------
+
+def ask_pdf(chunks, question):
+    relevant_chunks = retrieve_chunks(chunks, question)
+
+    if chunks[0] not in relevant_chunks:
+        relevant_chunks.insert(0, chunks[0])
+
+    if not relevant_chunks:
+        relevant_chunks = chunks[:2] # Fallback to the first few chunks if no relevance found
+    
+    context = "\n\n".join(relevant_chunks)
+
     prompt = f"""
-    Answer strictly using the PDF content.
- If the answer cannot be confidently inferred, say "Not found in the document."
+Answer using the PDF content. If the answer is clearly not present,
+say "Not found in the document."
+
 
 
 PDF Content:
-{pdf_text}
+{context}
 
 Question:
 {question}
@@ -58,8 +105,12 @@ if __name__ == "__main__":
     print("\nLoading PDF...")
     pdf_text = Extract_Text(pdf_path)
 
-    print("PDF loaded successfully. You can now ask questions about its content.")
+    print("Chunking Documents...")
+    chunks = chunk_text(pdf_text)
+    print(f"Document split into {len(chunks)} chunks.")
+
     print("Ask your questions below (type 'exit' to quit):\n")
+
 
     while True:
         question = input(">> ")
@@ -68,5 +119,5 @@ if __name__ == "__main__":
         if question.lower() == 'exit':
             break
 
-        answer = ask_pdf(pdf_text, question)
+        answer = ask_pdf(chunks, question)
         print("\n", answer, "\n")
