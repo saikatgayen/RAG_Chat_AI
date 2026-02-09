@@ -1,64 +1,66 @@
-# PDF_CHAT_AI (Basic RAG – Local LLM)
+# PDF_CHAT_AI (RAG v1 – Chunked Retrieval, Local LLM)
 
-A **basic Retrieval-Augmented Generation (RAG) proof-of-concept** project that allows users to chat with a PDF document using a **locally hosted LLM (Ollama + LLaMA3)**.
+A **Retrieval-Augmented Generation (RAG) v1 project** that lets users chat with any PDF document using a locally hosted LLM (Ollama + LLaMA3).
 
-This project is intentionally kept **simple and minimal** to clearly demonstrate the *core idea of RAG*: grounding a language model’s responses in external documents (PDFs), before introducing advanced techniques like embeddings, vector databases, or APIs.
+This version upgrades the naive approach by introducing **text chunking and retrieval**, ensuring that only **relevant parts of the document** are sent to the model for each query.
 
----
-
-##  Project Overview
-
-The application:
-
-* Loads a PDF file
-* Extracts all textual content
-* Uses the extracted text as **context**
-* Passes the context + user question to a local LLM
-* Returns answers **strictly based on the PDF content**
-
-If the answer does not exist in the document, the model is instructed to say so.
-
-This version represents **RAG v0 (Naive RAG)**.
+The project is built as a **CLI-based learning-first system**, focusing on understanding *how RAG works internally* before adding embeddings, vector databases, or APIs.
 
 ---
 
-##  Why This Project
+## Project Overview
 
-This project was built as a **learning-first RAG implementation**, focusing on:
+The application performs the following steps:
 
-* Understanding how document grounding works
-* Seeing the limitations of naive context injection
-* Building intuition for why chunking, retrieval, and embeddings are necessary
+1. User selects a PDF file at runtime
+2. Text is extracted from the PDF
+3. The document is split into overlapping chunks
+4. For each user question:
 
-Rather than starting with complex architectures, this project builds a strong conceptual foundation.
+   * Relevant chunks are selected using keyword-based scoring
+   * Only those chunks are passed as context to the LLM
+5. The LLM answers **strictly from the retrieved document context**
+
+If the information is not present in the document, the model is instructed to say so.
 
 ---
 
-##  Project Structure
+## What This Version Demonstrates
+
+* Why sending the entire document to an LLM is inefficient
+* How **chunking** improves focus and reduces token usage
+* What “retrieval” means *before* embeddings are introduced
+* How RAG systems evolve incrementally
+
+This represents **RAG v1: Chunked Retrieval (No Embeddings)**.
+
+---
+
+## Project Structure
 
 ```
 pdf_chat_basic/
-├── pdf_chat.py          # Main CLI application
+├── pdf_chat.py          # CLI-based RAG pipeline (v1)
 ├── data/
-│   └── sample.pdf       # PDF document to query
-├── requirements.txt     # Project dependencies
+│   └── sample.pdf       # Example PDF (optional)
+├── requirements.txt     # Dependencies
 └── README.md
 ```
 
 ---
 
-##  Tech Stack
+## Tech Stack
 
 * **Python**
-* **Ollama** (Local LLM runtime)
-* **LLaMA3** (Language Model)
+* **Ollama** (local LLM runtime)
+* **LLaMA3** (language model)
 * **PyPDF** (PDF text extraction)
 
-No cloud APIs or external services are used.
+No cloud APIs, no vector databases, and no web frameworks are used.
 
 ---
 
-##  Installation
+## Installation
 
 ### 1. Clone the repository
 
@@ -67,12 +69,12 @@ git clone https://github.com/<your-username>/PDF_CHAT_AI.git
 cd PDF_CHAT_AI
 ```
 
-### 2. Create a virtual environment (recommended)
+### 2. Create and activate a virtual environment (recommended)
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # macOS / Linux
-venv\Scripts\activate     # Windows
+source venv/bin/activate   # macOS / Linux
+venv\Scripts\activate      # Windows
 ```
 
 ### 3. Install dependencies
@@ -81,9 +83,9 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-### 4. Install and run Ollama
+### 4. Install and configure Ollama
 
-* Install Ollama from: [https://ollama.com](https://ollama.com)
+* Download Ollama from: [https://ollama.com](https://ollama.com)
 * Pull the model:
 
 ```bash
@@ -92,65 +94,72 @@ ollama pull llama3
 
 ---
 
-##  Usage
+## Usage
 
-1. Place your PDF file inside the `data/` directory
-2. Update the PDF path in `pdf_chat.py` if needed
-3. Run the application:
+Run the application:
 
 ```bash
 python pdf_chat.py
 ```
 
-4. Ask questions in the terminal
-5. Type `exit` to quit
+You will be prompted to enter the path to a PDF file:
+
+```
+Enter path to PDF file: /path/to/your/document.pdf
+```
+
+Ask questions in the terminal. Type `exit` to quit.
 
 ---
 
-##  Example Questions
+## Example Questions
 
 * "What is this document about?"
-* "Summarize the main topic."
-* "What does the author say about X?"
+* "Explain the concept of X mentioned in the PDF"
+* "What does the document say about Y?"
 
-The model will answer **only if the information exists in the PDF**.
-
----
-
-##  Known Limitations
-
-This version intentionally has limitations:
-
-* Entire PDF is sent as context (token-heavy)
-* Not scalable for large documents
-* No chunking or semantic retrieval
-* Slower responses for big PDFs
-
-These limitations are **intentional** and motivate the next iterations.
+The model responds using **only the retrieved chunks** from the PDF.
 
 ---
 
-##  Future Improvements
+## Known Limitations
 
-Planned upgrades include:
+This version uses **keyword-based retrieval**, which has limitations:
 
-* Text chunking
-* Semantic retrieval
-* Embeddings with SentenceTransformers
-* Vector search using FAISS
+* Does not understand synonyms or semantic similarity
+* Retrieval quality depends on exact word overlap
+* Not optimal for very large or complex documents
+
+These limitations are intentional and motivate the next upgrade.
+
+---
+
+## Planned Improvements
+
+Future versions will include:
+
+* Semantic retrieval using embeddings
+* Vector search with FAISS
+* Better chunk metadata (page numbers, sources)
 * Modular project structure
-* FastAPI backend
+* Optional FastAPI interface
 
 ---
 
-##  Learning Outcomes
+## Learning Outcomes
 
-Through this project, you will understand:
+By building this version, you gain hands-on understanding of:
 
-* What RAG is at a fundamental level
-* How LLMs can be grounded in external data
-* Why naive approaches fail
-* How real-world RAG systems evolve
+* Core RAG concepts
+* Chunking strategies and trade-offs
+* Retrieval logic without abstractions
+* How LLM context grounding works
+
+---
+
+## License
+
+This project is intended for educational purposes.
 
 ---
 
@@ -158,4 +167,4 @@ Through this project, you will understand:
 
 **Saikat Gayen**
 
-Aspiring AI / LLM Engineer | Python | RAG Systems | Local LLMs
+Aspiring AI / LLM Engineer | Python | RAG Systems |
