@@ -1,65 +1,71 @@
-PDF_CHAT_AI (RAG v2 – Embeddings + Semantic Search, Local LLM)
+PDF_CHAT_AI (RAG v2 – Semantic Search with Embeddings, Local LLM)
 
-A Retrieval-Augmented Generation (RAG) v2 project that allows users to chat with any PDF document using a locally hosted LLM (Ollama + LLaMA3) combined with semantic search via embeddings.
+A Retrieval-Augmented Generation (RAG) v2 project that allows users to chat with any PDF document using a locally hosted LLM (Ollama + LLaMA3) and embedding-based semantic search.
 
-This version upgrades RAG v1 by replacing keyword-based retrieval with embedding-based semantic similarity, enabling the system to understand paraphrasing, synonyms, and conceptual similarity.
+This version upgrades the previous keyword-based retrieval system by introducing:
 
-The project remains CLI-based and learning-focused, designed to clearly demonstrate how modern RAG systems work internally before introducing vector databases or production infrastructure.
+- Sentence-aware chunking
 
-🚀 Project Overview
+- Embedding generation using Sentence Transformers
 
-The application performs the following pipeline:
+- Cosine similarity–based semantic retrieval
 
-User selects a PDF file at runtime
+The system now retrieves context based on meaning, not just word overlap.
 
-Text is extracted from the PDF
+The project remains CLI-based and learning-focused, designed to deeply understand how modern RAG systems work internally before introducing vector databases or production APIs.
 
-The document is split into overlapping sentence-aware chunks
+ Project Evolution
+ RAG v0 – Naive Approach
 
-Each chunk is converted into a vector embedding
+- The entire PDF was sent to the LLM
 
-For each user question:
+- Inefficient and not scalable
 
-The question is embedded
+ RAG v1 – Chunked Keyword Retrieval
 
-Cosine similarity is computed against all chunk embeddings
+- Document split into chunks
 
-Top-k most semantically relevant chunks are retrieved
+- Chunks selected using word overlap scoring
 
-Only those relevant chunks are passed as context to the LLM
+- Improved token efficiency
 
-The LLM answers strictly from the retrieved context
+- Limited semantic understanding
 
-If the answer is not present in the document, the model is instructed to say:
+ RAG v2 – Semantic Retrieval (Current Version)
 
-"Not found in the document."
+- Sentence-aware overlapping chunks
 
-🧠 What This Version Demonstrates
+- Embeddings generated using all-MiniLM-L6-v2
 
-This represents RAG v2: Semantic Retrieval with Embeddings.
+- Cosine similarity for retrieval
 
-You will understand:
+- Top-k semantically relevant chunks sent to LLM
 
-Why keyword matching is limited
+This version reflects a real-world RAG pipeline architecture.
 
-How embeddings represent semantic meaning
+What This Version Demonstrates
 
-How cosine similarity enables semantic search
+- How do embeddings represent semantic meaning?
 
-How modern RAG systems retrieve relevant context
+- Why is keyword retrieval insufficient?
 
-The mathematical foundation behind vector-based retrieval
+- How does cosine similarity enable semantic search?
 
-This version moves closer to industry-standard RAG architecture.
+- How to build a RAG pipeline from scratch (no frameworks)?
 
-🏗️ Architecture Flow
+- How does retrieval grounding improve LLM reliability?
+
+This is a true embedding-powered RAG system running fully locally.
+
+Architecture Overview
+
 PDF
  ↓
 Text Extraction (PyPDF)
  ↓
-Sentence-Aware Chunking (with overlap)
+Sentence-Based Chunking (with overlap)
  ↓
-Embedding Generation (SentenceTransformers)
+Embedding Generation (Sentence Transformers)
  ↓
 Store Chunk Embeddings (in memory)
  ↓
@@ -67,180 +73,19 @@ User Question
  ↓
 Embed Question
  ↓
-Cosine Similarity Search
+Cosine Similarity
  ↓
-Top-K Relevant Chunks
+Top-K Semantic Chunk Retrieval
  ↓
 Pass Context to LLaMA3 (Ollama)
  ↓
 Grounded Answer
 
-📁 Project Structure
+Project Structure
+
 PDF_CHAT_AI/
-├── pdf_chat.py          # CLI-based RAG v2 pipeline
+├── pdf_chat.py          # Full RAG v2 pipeline (CLI-based)
 ├── data/
 │   └── sample.pdf       # Example PDF (optional)
-├── requirements.txt     # Dependencies
+├── requirements.txt
 └── README.md
-
-⚙️ Tech Stack
-
-Python
-
-Ollama (local LLM runtime)
-
-LLaMA3 (language model)
-
-PyPDF (PDF text extraction)
-
-SentenceTransformers (embeddings)
-
-NumPy (vector math / cosine similarity)
-
-No cloud APIs, no external vector databases.
-
-Everything runs locally.
-
-📦 Installation
-1. Clone the repository
-git clone https://github.com/<your-username>/PDF_CHAT_AI.git
-cd PDF_CHAT_AI
-
-2. Create and activate a virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate   # macOS / Linux
-venv\Scripts\activate      # Windows
-
-3. Install dependencies
-pip install -r requirements.txt
-
-
-Make sure requirements.txt includes:
-
-pypdf
-ollama
-sentence-transformers
-numpy
-
-4. Install and configure Ollama
-
-Download from:
-https://ollama.com
-
-Pull the model:
-
-ollama pull llama3
-
-▶️ Usage
-
-Run the application:
-
-python pdf_chat.py
-
-
-You will be prompted:
-
-Enter the path to your PDF file:
-
-
-Then ask questions in the terminal.
-
-Type exit to quit.
-
-📝 Example Questions
-
-"What is this document about?"
-
-"Explain the main idea in simple terms."
-
-"What does the paper say about neural architectures?"
-
-"Summarize the section discussing model evaluation."
-
-Unlike RAG v1, this version can handle:
-
-Synonyms
-
-Paraphrased questions
-
-Conceptual similarity
-
-Indirect phrasing
-
-🔍 Why RAG v2 Is Better Than RAG v1
-Feature	RAG v1	RAG v2
-Keyword Matching	✅	❌
-Semantic Understanding	❌	✅
-Handles Synonyms	❌	✅
-Cosine Similarity	❌	✅
-Embeddings	❌	✅
-Industry Relevance	Basic	Practical
-
-RAG v2 uses vector embeddings + cosine similarity, which is how most production RAG systems begin.
-
-⚠️ Current Limitations
-
-Embeddings are recomputed every run (not persisted)
-
-Retrieval is in-memory (no FAISS / vector DB yet)
-
-No page-number citation
-
-CLI-only interface
-
-These limitations are intentional for learning clarity.
-
-🔮 Planned Improvements (Next Versions)
-
-Future upgrades may include:
-
-Persistent embedding storage
-
-FAISS for scalable vector search
-
-Metadata tracking (page numbers, source citations)
-
-Modular RAG architecture
-
-Streaming responses
-
-FastAPI / Web UI
-
-Multi-document support
-
-🎯 Learning Outcomes
-
-By building this version, you gain hands-on understanding of:
-
-Embedding models
-
-Vector representations of text
-
-Cosine similarity mathematics
-
-Semantic search fundamentals
-
-Real RAG architecture
-
-Context grounding techniques
-
-This is a strong foundation for:
-
-LLM engineering roles
-
-Applied AI roles
-
-RAG system development
-
-Production LLM pipelines
-
-📜 License
-
-This project is intended for educational and learning purposes.
-
-👤 Author
-
-Saikat Gayen
-
-Aspiring AI / LLM Engineer
-Python | RAG Systems | Local LLMs | Semantic Search
