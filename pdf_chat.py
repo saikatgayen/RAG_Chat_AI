@@ -5,6 +5,11 @@ import numpy as np
 import os
 import re
 
+#------------ Load  embedding model ------------
+
+print("Loading embedding model...")
+embedding_model = SentenceTransformer("all-MiniL-L6-v2")
+
 #------------ Extract Text from PDF ------------
 
 def Extract_Text(pdf_path):

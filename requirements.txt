@@ -1,4 +1,4 @@
 pypdf
-ollama LLaMA3
+ollama
 sentence-transformers
 numpy
