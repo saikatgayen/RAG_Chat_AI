@@ -25,7 +25,7 @@ def Extract_Text(pdf_path):
     
 #------------ Sentence-Aware Chunking ------------
 
-def chunk_text(text, chunk_size=500, overlap=100):
+def chunk_text(text, chunk_size=1200, overlap=200):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     chunks = []
     current_chunk = ""
@@ -45,23 +45,21 @@ def chunk_text(text, chunk_size=500, overlap=100):
 #------------ Create Embeddings for Chunks ------------
 
 def embed_chunks(chunks):
-    embeddings = embedding_model.encode(chunks)
+    embeddings = embedding_model.encode(chunks, normalize_embeddings=True)
     return embeddings
 
 
 #------------ Semantic Retrieval (RAG v2) ------------
 
-def retrieve_chunks_semantic(chunks, chunk_embeddings, question, top_k=9):
-    question_embedding = embedding_model.encode([question])[0]
-    
+def retrieve_chunks_semantic(chunks, chunk_embeddings, question, top_k=10):
+    question_embedding = embedding_model.encode([question], normalize_embeddings=True)[0]
+
     # Cosine similarity
-    similarities = np.dot(chunk_embeddings, question_embedding) / (
-        np.linalg.norm(chunk_embeddings, axis=1)* np.linalg.norm(question_embedding)
-    )
+    similarities = np.dot(chunk_embeddings, question_embedding)
 
     top_indices = np.argsort(similarities)[-top_k:][::-1]
-    
-    return [chunks[i] for  i in top_indices]
+
+    return [chunks[i] for i in top_indices]
 
 
 #------------ Ask LLM with Retrieved Context ------------
