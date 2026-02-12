@@ -1,2 +1,4 @@
 pypdf
 ollama LLaMA3
+sentence-transformers
+numpy
