@@ -1,5 +1,7 @@
 from pypdf import PdfReader 
-from ollama import chat 
+from ollama import chat
+from sentence_transformers import SentenceTransformer
+import numpy as np
 import os
 import re
 
