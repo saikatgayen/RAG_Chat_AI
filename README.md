@@ -67,10 +67,12 @@ This represents RAG v2: Embedding-Based Semantic Retrieval.
  - Sentence Transformers
  - NumPy
 
-✅ No cloud APIs
-✅ No OpenAI API
-✅ No external vector databases
-✅ Fully local execution
+### Not yet implemented:
+ -  **Cloud APIs**
+ -  **OpenAI API**
+ -  **External vector databases**
+ -  **Evaluation metrix**
+ -  **Monitoring System**
 
 # Installation
 1️⃣ Clone the Repository
@@ -206,3 +208,4 @@ This project is intended for educational purposes.
 Saikat Gayen
 Aspiring AI / LLM Engineer
 Python | RAG Systems | Local LLMs | Retrieval Engineering
+
