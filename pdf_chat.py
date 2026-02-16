@@ -4,73 +4,98 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 import os
 import re
+import faiss
+import pickle
+
+
+INDEX_PATH = "vector_store/index.faiss"
+META_PATH = "vector_store/metadata.pkl"
 
 #------------ Load  embedding model ------------
 
 print("Loading embedding model...")
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-#------------ Extract Text from PDF ------------
+#------------ Extract Text from PDF with Page Numbers ------------
 
 def Extract_Text(pdf_path):
     reader = PdfReader(pdf_path)
-    text = ""
-
-    for page in reader.pages:
-        extracted = page.extract_text()
-        if extracted:
-            text += extracted + "\n"
-
-    return text
-    
-#------------ Sentence-Aware Chunking ------------
-
-def chunk_text(text, chunk_size=1200, overlap=200):
-    sentences = re.split(r'(?<=[.!?])\s+', text)
     chunks = []
-    current_chunk = ""
 
-    for sentence in sentences:
-        if len(current_chunk) + len(sentence) <= chunk_size:
-            current_chunk += " " + sentence
-        else:
-            chunks.append(current_chunk.strip()) #overlap handled by keeping last parts of the chunk
-            current_chunk = current_chunk[-overlap:] + " " + sentence
+    for page_number, page in enumerate(reader.pages):
+        text = page.extract_text()
+        if text:
+            sentences = re.split(r'(?<=[.!?])\s+', text)
 
-    if current_chunk:
-        chunks.append(current_chunk.strip())
+            current_chunk = ""
+            for sentence in sentences:
+                if len(current_chunk) + len(sentence) <= 500:
+                    current_chunk += " " + sentence
+                else:
+                    chunks.append({
+                        "text": current_chunk.strip(),
+                        "page": page_number + 1
+                    })
+                    current_chunk = sentence
 
-    return chunks
+            if current_chunk:
+                chunks.append({
+                    "text": current_chunk.strip(),
+                    "page": page_number + 1
+                })        
 
-#------------ Create Embeddings for Chunks ------------
+    return chunks        
 
-def embed_chunks(chunks):
-    embeddings = embedding_model.encode(chunks, normalize_embeddings=True)
-    return embeddings
+    
+#------------ Build FAISS Index ------------
 
+def build_vector_store(chunks):
+    texts = [chunk["text"] for chunk in chunks]
 
-#------------ Semantic Retrieval (RAG v2) ------------
+    embeddings = embedding_model.encode(texts)
+    dimension = embeddings.shape[1]
 
-def retrieve_chunks_semantic(chunks, chunk_embeddings, question, top_k=10):
-    question_embedding = embedding_model.encode([question], normalize_embeddings=True)[0]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(np.array(embeddings))
 
-    # Cosine similarity
-    similarities = np.dot(chunk_embeddings, question_embedding)
+    os.makedirs("vector_store", exist_ok = True)
+    faiss.write_index(index, INDEX_PATH)
 
-    top_indices = np.argsort(similarities)[-top_k:][::-1]
+    with open(META_PATH, "wb") as f:
+        pickle.dump(chunks, f)
 
-    return [chunks[i] for i in top_indices]
+    return index, chunks    
 
+#------------ Load Existing Index ------------
 
-#------------ Ask LLM with Retrieved Context ------------
+def load_vector_store():
+    index = faiss.read_index(INDEX_PATH)
+    
+    with open(META_PATH, "rb") as f:
+        chunks = pickle.load(f)
 
-def ask_pdf(chunks, chunk_embeddings, question):
-    relevant_chunks = retrieve_chunks_semantic(chunks, chunk_embeddings, question)
+    return index, chunks
 
-    if not relevant_chunks:
-        relevant_chunks = chunks[:2]
+#------------ Retrieval of relevant chunks ------------
 
-    context = "\n\n".join(relevant_chunks)
+def retrieve(index, chunks, question, top_k=3):
+    question_embedding = embedding_model.encode([question])
+    distance, indices = index.search(np.array(question_embedding), top_k)
+
+    results = []
+    for idx in indices[0]:
+        results.append(chunks[idx])
+
+    return results    
+
+#------------ Ask LLM ------------
+
+def ask_pdf(chunks, index, question):
+    retrieved = retrieve(chunks, index, question)
+
+    context = ""
+    for chunk in retrieved:
+        context += f"Page {chunk['page']}:\n{chunk['text']}\n\n"
 
     prompt = f"""
 You are answering strictly from the given PDF content.,
@@ -101,24 +126,14 @@ if __name__ == "__main__":
     pdf_path = input("Enter the path to your PDF file: ").strip()
 
 
-    if not os.path.exists(pdf_path):
-        print("File not found. Please check the path and try again.")
-        exit(1)
-
-    if not pdf_path.lower().endswith('.pdf'):
-        print("The specified file is not a PDF. Please provide a valid PDF file.")
-        exit(1)
-
-    print("\nLoading PDF...")
-    pdf_text = Extract_Text(pdf_path)
-
-    print("Chunking Documents...")
-    chunks = chunk_text(pdf_text)
-    print(f"Document split into {len(chunks)} chunks.")
-
-    print("Generating embeddings...")
-    chunk_embeddings = embed_chunks(chunks)
-    print("Embeddings ready.\n")
+    if not os.path.exists(INDEX_PATH):
+        print("Building vector store...")
+        chunks = Extract_Text(pdf_path)
+        index, chunks = build_vector_store(chunks)
+        print("Index built and saved.")
+    else:
+        print("Loading existing vector store...")
+        index, chunks = load_vector_store()
 
     print("Ask your questions below (type 'exit' to quit):\n")
 
@@ -130,5 +145,5 @@ if __name__ == "__main__":
         if question.lower() == 'exit':
             break
 
-        answer = ask_pdf(chunks, chunk_embeddings, question)
+        answer = ask_pdf(chunks, index, question)
         print("\n", answer, "\n")
