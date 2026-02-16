@@ -1,3 +1,7 @@
+# macOS System files
+.DS_Store
+
+
 #Vector Store (generated files)
 vector_store/
 *.faiss
