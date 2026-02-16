@@ -29,7 +29,7 @@ def Extract_Text(pdf_path):
 
             current_chunk = ""
             for sentence in sentences:
-                if len(current_chunk) + len(sentence) <= 500:
+                if len(current_chunk) + len(sentence) <= 900:
                     current_chunk += " " + sentence
                 else:
                     chunks.append({
@@ -52,7 +52,7 @@ def Extract_Text(pdf_path):
 def build_vector_store(chunks):
     texts = [chunk["text"] for chunk in chunks]
 
-    embeddings = embedding_model.encode(texts)
+    embeddings = embedding_model.encode(texts, normalize_embeddings=True)
     dimension = embeddings.shape[1]
 
     index = faiss.IndexFlatL2(dimension)
@@ -78,9 +78,9 @@ def load_vector_store():
 
 #------------ Retrieval of relevant chunks ------------
 
-def retrieve(index, chunks, question, top_k=3):
-    question_embedding = embedding_model.encode([question])
-    distance, indices = index.search(np.array(question_embedding), top_k)
+def retrieve(index, chunks, question, top_k=5):
+    question_embedding = embedding_model.encode([question], normalize_embeddings=True)
+    distances, indices = index.search(np.array(question_embedding), top_k)
 
     results = []
     for idx in indices[0]:
@@ -91,7 +91,7 @@ def retrieve(index, chunks, question, top_k=3):
 #------------ Ask LLM ------------
 
 def ask_pdf(chunks, index, question):
-    retrieved = retrieve(chunks, index, question)
+    retrieved = retrieve(index, chunks, question)
 
     context = ""
     for chunk in retrieved:

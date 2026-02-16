@@ -2,3 +2,5 @@ pypdf
 ollama
 sentence-transformers
 numpy
+faiss-cpu
+pickle5
